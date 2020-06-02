@@ -8,5 +8,6 @@ data/*/
 implementations/*/data
 implementations/*/images
 implementations/*/saved_models
+implementations/*/tensorboard
 
 __pycache__

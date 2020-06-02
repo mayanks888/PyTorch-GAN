@@ -1,6 +1,3 @@
-import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
 import argparse
 import os
 import numpy as np
@@ -28,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 # parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--dataset_name", type=str, default="red2green2", help="name of the dataset")
+parser.add_argument("--dataset_name", type=str, default="apple2orange", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=1, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
@@ -73,6 +70,27 @@ if cuda:
     criterion_GAN.cuda()
     criterion_cycle.cuda()
     criterion_identity.cuda()
+
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+        G_AB = nn.DataParallel(G_AB)
+        G_BA = nn.DataParallel(G_BA)
+        D_A = nn.DataParallel(D_A)
+        D_B = nn.DataParallel(D_B)
+        criterion_GAN = nn.DataParallel(criterion_GAN)
+        criterion_cycle = nn.DataParallel(criterion_cycle)
+        criterion_identity = nn.DataParallel(criterion_identity)
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    G_AB.to(device)
+    G_BA.to(device)
+    D_A.to(device)
+    D_B.to(device)
+    criterion_GAN.to(device)
+    criterion_cycle.to(device)
+    criterion_identity.to(device)
 
 if opt.epoch != 0:
     # Load pretrained models

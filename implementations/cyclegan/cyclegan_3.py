@@ -8,7 +8,9 @@ import math
 import itertools
 import datetime
 import time
-
+from torch.utils.tensorboard import SummaryWriter
+# from tensorboardX import SummaryWriter
+import numpy as np
 import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 
@@ -25,21 +27,21 @@ import torch.nn.functional as F
 import torch
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
+parser.add_argument("--epoch", type=int, default=5, help="epoch to start training from")
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 # parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--dataset_name", type=str, default="red2green2", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=1, help="size of the batches")
+parser.add_argument("--dataset_name", type=str, default="day2night_cycle", help="name of the dataset")
+parser.add_argument("--batch_size", type=int, default=3, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0002, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_height", type=int, default=256, help="size of image height")
-parser.add_argument("--img_width", type=int, default=256, help="size of image width")
+parser.add_argument("--img_height", type=int, default=(256), help="size of image height")
+parser.add_argument("--img_width", type=int, default=(256), help="size of image width")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
-parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
+parser.add_argument("--sample_interval", type=int, default=400, help="interval between saving generator outputs")
+parser.add_argument("--checkpoint_interval", type=int, default=5, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=9, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
@@ -120,20 +122,12 @@ transforms_ = [
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ]
 
+datasets_path='/media/mayank_sati/DATA/datasets/traffic_light/BDD/day2night_cycle/all_new'
+datasets_path_val='/media/mayank_sati/DATA/datasets/traffic_light/BDD/day2night_cycle/all_new'
 # Training data loader
-dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, unaligned=True),
-    batch_size=opt.batch_size,
-    shuffle=True,
-    num_workers=opt.n_cpu,
-)
+dataloader = DataLoader(ImageDataset(datasets_path, transforms_=transforms_, unaligned=True), batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu,)
 # Test data loader
-val_dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, unaligned=True, mode="test"),
-    batch_size=5,
-    shuffle=True,
-    num_workers=1,
-)
+val_dataloader = DataLoader(ImageDataset(datasets_path_val, transforms_=transforms_, unaligned=True, mode="test"), batch_size=5, shuffle=True, num_workers=1,)
 
 
 def sample_images(batches_done):
@@ -158,9 +152,11 @@ def sample_images(batches_done):
 # ----------
 #  Training
 # ----------
-
+ten_path="/home/mayank_sati/codebase/pycharm_projects/pytorch/GAN/PyTorch-GAN/implementations/cyclegan/tensorboard"
+writer = SummaryWriter(ten_path)
 prev_time = time.time()
 for epoch in range(opt.epoch, opt.n_epochs):
+
     for i, batch in enumerate(dataloader):
 
         # Set model input
@@ -271,7 +267,31 @@ for epoch in range(opt.epoch, opt.n_epochs):
             )
         )
 
+
+        ############################################333
+
+
+
+
+        # for n_iter in range(100):
+            # writer.add_scalar('Loss/train', np.random.random(), n_iter)
+            # writer.add_scalar('Loss/test', np.random.random(), n_iter)
+            # writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
+            # writer.add_scalar('Accuracy/test', np.random.random(), n_iter)
+
+            # writer.add_scalar('D loss', loss_D.item(), n_iter)
+            # writer.add_scalar('G loss', loss_G.item(), n_iter)
+            # writer.add_scalar('adv', loss_GAN.item(), n_iter)
+            # writer.add_scalar('cycle', loss_cycle.item(), n_iter)
+            # writer.add_scalar('identity', loss_identity.item(), n_iter
+        writer.add_scalar('D loss', loss_D.item(),batches_done)
+        writer.add_scalar('G loss', loss_G.item(),batches_done)
+        writer.add_scalar('adv', loss_GAN.item(),batches_done)
+        writer.add_scalar('cycle', loss_cycle.item(),batches_done)
+        writer.add_scalar('identity', loss_identity.item(),batches_done)
+        ###############################################
         # If at sample interval save image
+        # print("bathes dones ",batches_done)
         if batches_done % opt.sample_interval == 0:
             sample_images(batches_done)
 

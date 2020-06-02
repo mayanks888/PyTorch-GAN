@@ -1,3 +1,6 @@
+import os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import argparse
 import os
 import numpy as np
@@ -37,7 +40,7 @@ parser.add_argument("--channels", type=int, default=3, help="number of image cha
 parser.add_argument(
     "--sample_interval", type=int, default=500, help="interval between sampling of images from generators"
 )
-parser.add_argument("--checkpoint_interval", type=int, default=-5, help="interval between model checkpoints")
+parser.add_argument("--checkpoint_interval", type=int, default=5, help="interval between model checkpoints")
 opt = parser.parse_args()
 print(opt)
 
@@ -86,15 +89,18 @@ transforms_ = [
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 ]
 
+datasets_path='/media/mayank_sati/DATA/datasets/GAN/night2day'
+datasets_path_val='/media/mayank_sati/DATA/datasets/GAN/night2day'
+
 dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_),
+    ImageDataset(datasets_path, transforms_=transforms_),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 
 val_dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode="val"),
+    ImageDataset(datasets_path, transforms_=transforms_, mode="val"),
     batch_size=10,
     shuffle=True,
     num_workers=1,
